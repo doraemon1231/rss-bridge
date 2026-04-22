@@ -5,10 +5,38 @@ header('Access-Control-Allow-Origin: *');
 
 if (isset($_GET['resolve'])) {
     header('Content-Type: application/json');
+    
+    $url = $_GET['url'] ?? '';
+    preg_match('/\/articles\/([^?\/]+)/', $url, $m);
+    $id = $m[1] ?? '';
+    
+    $template = <<<'PAYLOAD'
+[[["Fbv4je","[\"garturlreq\",[[\"en-US\",\"US\",[\"FINANCE_TOP_INDICES\",\"WEB_TEST_1_0_0\"],null,null,1,1,\"US:en\",null,180,null,null,null,null,null,0,null,null,[1608992183,723341000]],\"en-US\",\"US\",1,[2,3,4,8],1,0,\"655000234\",0,0,null,0],\"ID_PLACEHOLDER\"]",null,"generic"]]]
+PAYLOAD;
+
+    $payload = str_replace('ID_PLACEHOLDER', $id, $template);
+    $postData = 'f.req=' . urlencode($payload);
+    
+    $ch = curl_init('https://news.google.com/_/DotsSplashUi/data/batchexecute?rpcids=Fbv4je');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/x-www-form-urlencoded;charset=utf-8',
+        'Referer: https://news.google.com/',
+    ]);
+    
+    $text = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err = curl_error($ch);
+    curl_close($ch);
+    
     die(json_encode([
-        'curl_enabled' => function_exists('curl_init'),
-        'php_version' => phpversion(),
-        'extensions' => get_loaded_extensions()
+        'http_code' => $code,
+        'curl_error' => $err,
+        'text_length' => strlen($text ?: ''),
+        'text_preview' => substr($text ?: '', 0, 500)
     ]));
 }
 
