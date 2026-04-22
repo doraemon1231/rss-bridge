@@ -8,36 +8,20 @@ if (isset($_GET['resolve'])) {
     
     $url = $_GET['url'] ?? '';
     preg_match('/\/articles\/([^?\/]+)/', $url, $m);
-    $id = $m[1];
+    $id = $m[1] ?? '';
     
-    $payload = '[[["Fbv4je","[\\"garturlreq\\",[[\\"en-US\\",\\"US\\",[\\"FINANCE_TOP_INDICES\\",\\"WEB_TEST_1_0_0\\"],null,null,1,1,\\"US:en\\",null,180,null,null,null,null,null,0,null,null,[1608992183,723341000]],\\"en-US\\",\\"US\\",1,[2,3,4,8],1,0,\\"655000234\\",0,0,null,0],\\"' . $id . '\\"]",null,"generic"]]]';
+    // 用 nowdoc 避免跳脫問題
+    $template = <<<'PAYLOAD'
+[[["Fbv4je","[\"garturlreq\",[[\"en-US\",\"US\",[\"FINANCE_TOP_INDICES\",\"WEB_TEST_1_0_0\"],null,null,1,1,\"US:en\",null,180,null,null,null,null,null,0,null,null,[1608992183,723341000]],\"en-US\",\"US\",1,[2,3,4,8],1,0,\"655000234\",0,0,null,0],\"ID_PLACEHOLDER\"]",null,"generic"]]]
+PAYLOAD;
+
+    $payload = str_replace('ID_PLACEHOLDER', $id, $template);
     
-    $postData = 'f.req=' . urlencode($payload);
-    
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => 'https://news.google.com/_/DotsSplashUi/data/batchexecute?rpcids=Fbv4je',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $postData,
-        CURLOPT_TIMEOUT => 15,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/x-www-form-urlencoded;charset=utf-8',
-            'Referer: https://news.google.com/',
-        ],
-    ]);
-    $text = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $err = curl_error($ch);
-    curl_close($ch);
-    
+    // 先確認 payload 組好了
     die(json_encode([
-        'http_code' => $code,
-        'curl_error' => $err,
-        'text_length' => strlen($text ?: ''),
-        'text_preview' => substr($text ?: '', 0, 500)
+        'id' => $id,
+        'payload_length' => strlen($payload),
+        'payload_preview' => substr($payload, 0, 100)
     ]));
 }
 
