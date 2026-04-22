@@ -7,31 +7,37 @@ if (isset($_GET['resolve'])) {
     header('Content-Type: application/json');
     
     $url = $_GET['url'] ?? '';
-    $matched = preg_match('/\/articles\/([^?\/]+)/', $url, $m);
-    if (!$matched) {
-        die(json_encode(['error' => 'regex failed']));
-    }
+    preg_match('/\/articles\/([^?\/]+)/', $url, $m);
     $id = $m[1];
     
-    // 先用最簡單的 curl 測試連線
+    $payload = '[[["Fbv4je","[\\"garturlreq\\",[[\\"en-US\\",\\"US\\",[\\"FINANCE_TOP_INDICES\\",\\"WEB_TEST_1_0_0\\"],null,null,1,1,\\"US:en\\",null,180,null,null,null,null,null,0,null,null,[1608992183,723341000]],\\"en-US\\",\\"US\\",1,[2,3,4,8],1,0,\\"655000234\\",0,0,null,0],\\"' . $id . '\\"]",null,"generic"]]]';
+    
+    $postData = 'f.req=' . urlencode($payload);
+    
     $ch = curl_init();
     curl_setopt_array($ch, [
-        CURLOPT_URL => 'https://news.google.com/',
+        CURLOPT_URL => 'https://news.google.com/_/DotsSplashUi/data/batchexecute?rpcids=Fbv4je',
         CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $postData,
         CURLOPT_TIMEOUT => 15,
         CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_USERAGENT => 'Mozilla/5.0',
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/x-www-form-urlencoded;charset=utf-8',
+            'Referer: https://news.google.com/',
+        ],
     ]);
-    $result = curl_exec($ch);
+    $text = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $err = curl_error($ch);
     curl_close($ch);
     
     die(json_encode([
-        'id_ok' => true,
-        'curl_http_code' => $code,
+        'http_code' => $code,
         'curl_error' => $err,
-        'result_length' => strlen($result ?: '')
+        'text_length' => strlen($text ?: ''),
+        'text_preview' => substr($text ?: '', 0, 500)
     ]));
 }
 
