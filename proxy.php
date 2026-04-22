@@ -40,6 +40,15 @@ if (isset($_GET['resolve'])) {
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
+    // 暫時加這段 debug
+    header('Content-Type: application/json');
+    die(json_encode([
+        'http_code' => $httpCode,
+        'curl_error' => $curlError,
+        'text_length' => strlen($text),
+        'text_preview' => substr($text, 0, 300)
+    ]));
+   
     header('Content-Type: application/json');
 
     if ($httpCode !== 200 || !$text) {
