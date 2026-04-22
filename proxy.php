@@ -2,83 +2,25 @@
 header('Access-Control-Allow-Origin: *');
 
 // 模式1：用 batchexecute 解碼 Google News 真實連結
+
 if (isset($_GET['resolve'])) {
-   
+    header('Content-Type: application/json');
+    
     $url = $_GET['url'] ?? '';
+    
+    // Step 1: 確認 URL 有收到
     if (!$url) {
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'missing url']);
-        exit;
+        die(json_encode(['step' => 1, 'error' => 'no url']));
     }
-
-    // 擷取文章 ID
-    if (!preg_match('/\/articles\/([^?\/]+)/', $url, $m)) {
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'not a Google News articles URL']);
-        exit;
+    
+    // Step 2: 確認 regex 能跑
+    $matched = preg_match('/\/articles\/([^?\/]+)/', $url, $m);
+    if (!$matched) {
+        die(json_encode(['step' => 2, 'error' => 'regex failed', 'url' => $url]));
     }
-
+    
     $id = $m[1];
-    $payload = '[[["Fbv4je","[\\"garturlreq\\",[[\\"en-US\\",\\"US\\",[\\"FINANCE_TOP_INDICES\\",\\"WEB_TEST_1_0_0\\"],null,null,1,1,\\"US:en\\",null,180,null,null,null,null,null,0,null,null,[1608992183,723341000]],\\"en-US\\",\\"US\\",1,[2,3,4,8],1,0,\\"655000234\\",0,0,null,0],\\"' . $id . '\\"]",null,"generic"]]]';
-
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => 'https://news.google.com/_/DotsSplashUi/data/batchexecute?rpcids=Fbv4je',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => http_build_query(['f.req' => $payload]),
-        CURLOPT_TIMEOUT => 15,
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/x-www-form-urlencoded;charset=utf-8',
-            'Referer: https://news.google.com/',
-        ],
-        CURLOPT_SSL_VERIFYPEER => false,
-    ]);
-
-    $text = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    // 暫時加這段 debug
-    header('Content-Type: application/json');
-    die(json_encode([
-        'http_code' => $httpCode,
-        'curl_error' => $curlError,
-        'text_length' => strlen($text),
-        'text_preview' => substr($text, 0, 300)
-    ]));
-   
-    header('Content-Type: application/json');
-
-    if ($httpCode !== 200 || !$text) {
-        echo json_encode(['error' => 'batchexecute failed', 'status' => $httpCode]);
-        exit;
-    }
-
-    // 解析回應
-    $header = '["garturlres","';
-    $footer = '",';
-    $start = strpos($text, $header);
-
-    if ($start === false) {
-        echo json_encode(['error' => 'decode header not found', 'raw' => substr($text, 0, 300)]);
-        exit;
-    }
-
-    $s = substr($text, $start + strlen($header));
-    $end = strpos($s, $footer);
-
-    if ($end === false) {
-        echo json_encode(['error' => 'decode footer not found']);
-        exit;
-    }
-
-    $decoded = substr($s, 0, $end);
-    $decoded = str_replace(['\\u003d','\\u0026','\\/','\\\"'], ['=','&','/','\"'], $decoded);
-
-    echo json_encode(['url' => $decoded, 'status' => 200]);
-    exit;
+    die(json_encode(['step' => 3, 'id' => $id]));
 }
 
 // 模式2：抓 Google News RSS（原有程式碼繼續往下）
