@@ -7,20 +7,32 @@ if (isset($_GET['resolve'])) {
     header('Content-Type: application/json');
     
     $url = $_GET['url'] ?? '';
-    
-    // Step 1: 確認 URL 有收到
-    if (!$url) {
-        die(json_encode(['step' => 1, 'error' => 'no url']));
-    }
-    
-    // Step 2: 確認 regex 能跑
     $matched = preg_match('/\/articles\/([^?\/]+)/', $url, $m);
     if (!$matched) {
-        die(json_encode(['step' => 2, 'error' => 'regex failed', 'url' => $url]));
+        die(json_encode(['error' => 'regex failed']));
     }
-    
     $id = $m[1];
-    die(json_encode(['step' => 3, 'id' => $id]));
+    
+    // 先用最簡單的 curl 測試連線
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => 'https://news.google.com/',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 15,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_USERAGENT => 'Mozilla/5.0',
+    ]);
+    $result = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err = curl_error($ch);
+    curl_close($ch);
+    
+    die(json_encode([
+        'id_ok' => true,
+        'curl_http_code' => $code,
+        'curl_error' => $err,
+        'result_length' => strlen($result ?: '')
+    ]));
 }
 
 // 模式2：抓 Google News RSS（原有程式碼繼續往下）
