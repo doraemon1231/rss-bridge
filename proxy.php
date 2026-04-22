@@ -3,10 +3,7 @@ header('Access-Control-Allow-Origin: *');
 
 // 模式1：用 batchexecute 解碼 Google News 真實連結
 if (isset($_GET['resolve'])) {
-
-    // 暫時加這行
-    die(json_encode(['debug' => 'resolve mode entered', 'url' => $_GET['url'] ?? 'none']));
-    
+   
     $url = $_GET['url'] ?? '';
     if (!$url) {
         header('Content-Type: application/json');
